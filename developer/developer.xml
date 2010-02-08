@@ -781,5 +781,768 @@ http://www.dbanotes.net/web/php_fastcgi_phpfpm.html PHP FastCGI 进程管理器:
 	</screen>
 	</section>
   </chapter>
+  <chapter>
+	<title>
+	PHP
+	</title>
+	<section>
+	<title>
+	Installation
+	</title>
+		<section>
+		<title>
+		for Apache
+		</title>
+			<screen>
+
+<![CDATA[
+./configure --prefix=/usr/local/php-5.2.11 \
+--with-config-file-path=/usr/local/php-5.2.11/etc \
+--with-apxs2=/usr/local/apache/bin/apxs \
+--with-curl \
+--with-gd \
+--with-ldap \
+--with-snmp \
+--with-iconv \
+--with-zlib-dir \
+--with-pear \
+--with-mysql=../mysql-5.1.41-linux-x86_64-icc-glibc23 \
+--with-mysqli \
+--with-pdo-mysql \
+--with-libxml-dir \
+--with-xmlrpc \
+--enable-zip \
+--enable-exif \
+--enable-sockets \
+--enable-soap
+
+make
+make test
+make install
+
+
+
+-- CGI方式 --
+httpd.conf
+
+  ScriptAlias /php/ "C:/Program Files/php-5.2.10/"
+  AddType application/x-httpd-php .php
+  Action application/x-httpd-php "/php/php-cgi.exe"
+  AddType application/x-httpd-php .html
+
+  注意,如果安装后出现You don't have permission to access / on this server.
+  或者出现无法运行php文件的情况下
+  查找httpd.conf中的
+  Deny from all
+  改为
+  Allow from all
+
+
+  注意：You don't have permission to access /php/php-cgi.exe/index.php on this server.
+
+  网上搜索了好多，不少人都有这个问题。后来在一个nl后缀的网站上提到了权限的问题。 
+
+  添了一个
+
+  <Directory "d:/www/php524">
+
+      Order deny,allow
+      Deny from none
+
+  </Directory> 
+
+  就可以了，其中Deny from none还可以改为 Allow from all。终于解决了php-cgi安装方式的问题。 
+
+
+php.ini
+
+  如果使用CGI模式，请修改php.ini的设置： cgi.force_redirect = 1，以增强apache的安全性，
+
+
+
+-- Module方式--
+httpd.conf
+
+	LoadModule php5_module "C:/Program Files/php-5.2.10/php5apache2_2.dll"
+	PHPIniDir "C:/Program Files/php-5.2.10/"
+	AddType application/x-httpd-php .php
+	AddType application/x-httpd-php .html
+
+
+]]>
+
+
+
+
+	
+			</screen>
+		</section>
+		<section>
+			<title>
+			for Lighttpd
+			</title>
+			<screen>
+<![CDATA[
+1. 下载PHP
+
+      cd /usr/local/src/
+      wget http://cn2.php.net/get/php-5.2.3.tar.bz2/from/cn.php.net/mirror
+      tar jxvf php-5.2.3.tar.bz2
+      cd php-5.2.3
+
+2. configure
+
+      ./configure --prefix=/usr/local/php-5.2.3 \
+      --with-config-file-path=/usr/local/php-5.2.3/etc \
+      --enable-fastcgi \
+      --enable-force-cgi-redirect \
+      --with-curl \
+      --with-gd \
+      --with-ldap \
+      --with-snmp \
+      --enable-zip \
+      --enable-exif \
+      --with-pdo-mysql \
+      --with-pdo-pgsql \
+
+      make
+      make test
+      make install
+      				
+
+      其它有用的模块
+
+      --enable-pcntl
+
+3. 符号连接
+
+      ln -s /usr/local/php-5.2.3 /usr/local/php
+      ln -s /usr/local/php/bin/php /usr/local/bin/php
+
+4. php.ini
+
+      cp php.ini-dist /usr/local/php/etc/php.ini
+
+5. env
+
+      PHP_FCGI_CHILDREN=384
+
+6. 使用 php -v FastCGI 安装情况
+
+      php -v 或 php-cgi -v
+
+      显示(cgi-fcgi)表示正确
+
+      # cd /usr/local/php/
+      # bin/php -v
+      PHP 5.2.2 (cgi-fcgi) (built: May 25 2007 15:50:28)
+      Copyright (c) 1997-2007 The PHP Group
+      Zend Engine v2.2.0, Copyright (c) 1998-2007 Zend Technologies
+      				
+
+      (cgi-fcgi)不能正常工作
+
+      PHP 5.2.2 (cli) (built: May 25 2007 15:50:28)
+      Copyright (c) 1997-2007 The PHP Group
+      Zend Engine v2.2.0, Copyright (c) 1998-2007 Zend Technologies
+      				
+
+      使用 php -m 或php-cgi -m 查看PHP Modules
+
+      # bin/php -m
+      [PHP Modules]
+      cgi-fcgi
+      ctype
+      date
+      dom
+      filter
+      gd
+      hash
+      iconv
+      json
+      ldap
+      libxml
+      mssql
+      pcre
+      PDO
+      pdo_mysql
+      pdo_sqlite
+      posix
+      Reflection
+      session
+      SimpleXML
+      snmp
+      SPL
+      SQLite
+      standard
+      tokenizer
+      xml
+      xmlreader
+      xmlwriter
+      zip
+
+      [Zend Modules]
+      				
+
+apt-get install
+
+$ sudo apt-get install php5 php5-cli php5-cgi
+
+]]>		
+			</screen>
+		
+		</section>
+	</section>
+	<section>
+		<title>
+		APC Cache
+		</title>
+		<screen>
+<![CDATA[
+PHP语言是一个功能强大的嵌入式HTML脚本语言，很多程序员都在使用这一语言来进行网站的创建。PHP APC,全称是Alternative PHP Cache,官方翻译叫”可选PHP缓存”,但我个人觉得应该叫”另一个PHP缓存”。因为这个东西如果叫”可选PHP缓存”,容易给人一种可要可不要的,不怎么有用的错觉。
+
+APC的主页是:http://pecl.php.net /package/apc.目前的版本是3.0.14,通过PECL安装,需要php4.3.0或更高版本.
+
+PHP APC的安装: 一般是下载源代码然后phpize来编译安装,安装完以后在加上php.ini里加上 extension=apc.so 这么一行就行了.
+
+PHP APC的使用： APC的使用其实倒说不上.APC是个优化器,自安装之日起,就默默地在后台为您的PHP应用服务了.您的所有PHP代码会被缓存起来. 另外,APC可提供一定的内存缓存功能.但是这个功能并不是十分完美,有报告说如果频繁使用APC缓存的写入功能,会导致不可预料的错误.如果想使用这个功能,可以看看apc_fetch,apc_store等几个与apc缓存相关的函数. 从PHP5.2开始,APC引入了一个小甜饼,解决了困扰大家已久的大文件上传的进度条问题.
+
+PHP APC的高级使用
+
+1.缓存期限: APC的缓存分两部分:系统缓存和用户数据缓存. 系统缓存 是自动使用的,是指APC把PHP文件源码的编译结果缓存起来,然后在再次调用时先对比时间标记。如果未过期,则使用缓存代码运行。默认缓存 3600s(一小时).但是这样仍会浪费大量CPU时间.因此可以在php.ini中设置system缓存为永不过期(apc.ttl=0).不过如果这样设置,改运php代码后需要restart一下您的web服务器(比如apache…).目前对APC的性能测试一般指的是这一层cache;
+
+用户数据缓存由用户在编写php代码时用apc_store和apc_fetch函数操作读取、写入的.如果量不大的话我建议可以使用一下.如果量大,我建议使用 memcache会更好. 如果要享受APC带来的缓存大文件上传进度的特性,需要在php.ini中将apc.rfc1867设为1,并且在表单中加一个隐藏域 APC_UPLOAD_PROGRESS,这个域的值可以随机生成一个hash,以确何唯一.具体例子请参见前面给出的链接.
+
+2.状态控制和分析: PHP APC的源码包自带了一个apc.php;您可以将这个文件上传到web服务器的某个目录下,用浏览器访问,这会显示当前的状态.我们可以从这里的表格分析当前的缓存状况,作出进一步优化. apc-info-clublocalhost2.png 这是某test站点的状态.您可以慢慢分析,这个工具会提供很多有用的工具.比如您可以看到哪些文件经常被包含(访问),您缓存的哪个变量经常被读取,或经常被更新等. 最后顺便提一句,有独立报告说,PHP APC的代码缓存、优化效果要高出zend优化器.就算不是真的,他开源而又免费,实在是一个相当不错的选择 
+]]>
+		</screen>
+		<section>
+			<title>
+			安装
+			</title>
+			<screen>
+<![CDATA[
+-- 下载地址 --
+
+http://pecl.php.net/get/APC-3.0.19.tgz
+
+http://pecl.php.net/get/APC-3.1.3.tgz
+
+
+-- Windows下安装 --
+php_apc.dll
+
+php_apc.dll下载：apc3.0.17-dev.zip
+
+将php_apc.dll放入 php.ini文件的extension_dir所指定的目录中(extension_dir = "C:\Program Files\php-5.2.10\ext")
+
+PHP.INI
+
+在PHP.INI文件里加入如下
+
+extension=php_apc.dll
+
+apc.rfc1867 = on
+apc.max_file_size = 200M
+upload_max_filesize = 200M
+post_max_size = 200M
+
+apc.enabled = 1
+apc.cache_by_default = on
+apc.shm_segments = 1
+apc.shm_size = 32
+apc.ttl = 600
+apc.user_ttl = 600
+apc.num_files_hint = 0
+apc.write_lock = On
+
+-- Linux下安装 --
+
+编译SO文件
+
+apc 安装下了最新的APC-3.0.19.tgz，解压，进入目录
+
+apc下载地址
+
+http://pecl.php.net/package/APC
+
+# tar -zxvf APC-3.0.19.tgz
+
+# cd APC-3.0.19
+
+# /usr/local/php/bin/phpize （生产configure文件）
+
+如果这一步发生错误，请看这里：
+
+#/usr/local/php/bin/phpize
+
+Configuring for:
+PHP Api Version:         20041225
+Zend Module Api No:      20060613
+Zend Extension Api No:   220060519
+Cannot find autoconf. Please check your autoconf installation and the $PHP_AUTOCONF
+environment variable is set correctly and then rerun this script.
+
+通过安装 autoconf 可以解决
+centos下执行 yum install autoconf即可
+
+
+
+# ./configure --enable-apc --enable-apc-mmap --with-php-config=/usr/local/php/bin/php-config
+
+# make
+
+# make install
+
+
+拷贝添加SO文件
+
+# cp /usr/local/lib/php/extensions/no-debug-zts-20060613/apc.so /usr/local/php/lib/php/extensions/apc.so
+
+# chmod 755 /usr/local/php/lib/php/extensions/apc.so
+
+
+修改PHP.INI使之启动APC模块
+
+修改 php.ini下
+
+extension_dir = "./"
+
+extension_dir = "/usr/local/php/lib/php/extensions"
+
+配置/etc/php.ini 末尾加入
+
+extension=apc.so
+
+apc.enabled = 1
+
+apc.cache_by_default = on
+
+apc.shm_segments = 1
+
+apc.shm_size = 128
+
+apc.ttl = 7200
+
+apc.user_ttl = 7200
+
+apc.num_files_hint = 1024
+
+apc.write_lock = On
+
+apc.gc_ttl=3600
+
+apc.ttl=0
+
+apc.mmap_file_mask=/tmp/apc.XXXXXX
+
+
+重启webservice 
+]]>			
+			</screen>
+		</section>
+		<section>
+			<title>
+			更多阅读链接
+			</title>
+			<screen>
+<![CDATA[
+http://developer.51cto.com/art/200912/166132.htm PHP APC的安装与高级使用 
+]]>
+			</screen>
+		</section>
+	</section>
+	<section>
+		<title>
+		Memcache
+		</title>
+		<screen>
+<![CDATA[
+目前全世界很多人使用这个缓存项目来构建自己的大负载网站，来分担数据库的压力。
+]]>
+		</screen>
+		
+	</section>
+	<section>
+		<title>
+		Zend Optimizer
+		</title>
+		<section>
+			<title>
+			安装
+			</title>
+			<screen>
+<![CDATA[
+Linux
+
+1. 下载
+
+到http://www.zend.com 下载 zend optimizer for linux包
+
+
+2. 解压
+
+tar -zxvf ZendOptimizer-3.3.9-linux-glibc23-i386.tar.gz
+
+
+3. 把动态连接库文件拷贝到PHP的扩展文件夹里
+
+cp -rf ZendOptimizer-3.3.9-linux-glibc23-i386/data/<根据PHP版本有不同的文件夹>/ZendOptimizer.so /usr/local/php/lib/php/extensions/
+
+
+4. 修改PHP.INI文件
+
+vim /usr/local/php/etc/php.ini
+
+加入下面文字:
+;-------------------------
+[Zend_Optimizer]
+
+;优化器所在目录
+zend_extension=/usr/local/php/lib/php/extensions/ZendOptimizer.so
+
+;优化程度，这里定义启动多少个优化过程
+zend_optimizer.optimization_level=1023
+
+;是否允许处理由Zend Encoder加密的PHP文件,默认就是1
+zend_optimizer.encoder_loader=1
+;-------------------------
+
+5. 重新启动webservice 
+]]>
+			</screen>
+		</section>
+		<section>
+			<title>
+			配置项说明
+			</title>
+			<screen>
+<![CDATA[
+zend_optimizer.optimization_level 优化程度，这里定义启动多少个优化过程。
+
+zend_optimizer.encoder_loader 是否允许处理由Zend Encoder加密的PHP文件。
+
+zend_extension 优化器所在目录。
+
+
+zend_optimizer.optimization_level
+
+优化过程
+
+这里最为重点的部分，仔细看！Zend Opt总共有10个优化过程，从理论上说开的越多性能越好。当然，理论和实际永远都存在着差距。优化过程开启的越多对性能消耗也相对也越大，Zend Opt的10个优化过程并不相同也就是说效果不是平均的。Zend公司定义的最高值(High模式)为15，这里15指的是开启1-4号优化过程。当然，很多朋友并不满足于此，毕竟最高也只开启4个优化过程连总数的一半都没有。各个优化过程的对应的数字代码（值）如下：
+
+不使用      0  <= 如果这样不如不装，还能节约点内存说！
+优化过程1(PASS1) 1
+优化过程2(PASS2) 2
+优化过程3(PASS3) 4
+优化过程4(PASS4) 8
+优化过程5(PASS5) 16
+优化过程6(PASS6) 32
+优化过程7(PASS7) 64
+优化过程8(PASS8) 128
+优化过程9(PASS9) 256
+优化过程10(PASS10) 512
+
+以何种方式开启优化过程是通过这些数字代码（值）相加所得的和作为此参数的参数值来控制的。如我的配置文件中 zend_optimizer.optimization_level = 1023 ，这里的1023是优化过程1到优化过程10全部数字代码（值）相加得到的和，表示开启全部10个优化过程。刚才所提到的Zend公司定义的High模式值为15，15表示同时开启优化过程1-4。
+
+
+zend_optimizer.encoder_loader
+
+加密代码支持
+
+对于这个参数，我想如果没有看过Zend Opt FAQ文档的朋友大多数并不知道。这个参数用来告诉Zend Opt是否去支持被Zend Encoder加密过的代码。默认情况下Zend Opt将支持加密过的代码。如果不使用被加密过的代码我推荐你关闭此选项。这个功能牵扯到解包反码的过程，会导致系统负荷的加重。我的朋友已经开发完毕相应的反编译工具，预计春节之后推出。
+
+这个参数的值只有两个 0 关闭， 1 开启。默认为1，推荐设置为0。
+
+
+zend_extension
+
+模块定位
+
+这是最简单的地方，参数就是Zend Opt模块在硬盘上的安装路径。 
+]]>
+			</screen>
+		</section>
+		<section>
+			<title>
+			问题和解决方法
+			</title>
+			<screen>
+<![CDATA[
+安装后Zend Optimizer没有启用
+
+(这个解决方法同样可以解决其他的 .so 文件无法载入和启动的问题)
+
+安装后,在phpinfo()函数中的“This program makes use of the Zend Scripting Language Engine:”中没有显示启用了Zend Optimizer
+
+/usr/local/php/bin/php-cgi -i|grep Optimizer 发现Zend Optimizer的状态是失败的，并且提示“cannot restore segment prot after reloc: Permission denied”
+
+这是SELinux在使坏，有两个解决的方法：
+
+        1. 使用chcon 命令 
+        示例: chcon -t texrel_shlib_t /usr/local/php/lib/php/extensions/ZendOptimizer.so 
+        2. 禁止掉SELinux 
+        更改/etc/sysconfig/selinux 文件的内容为 SELINUX=disabled 
+
+
+]]>
+			</screen>
+		</section>
+	</section>
+	<section>
+		<title>
+		phpzie
+		</title>
+		<screen>
+<![CDATA[
+phpize 命令是用来准备 PHP 扩展库的编译环境的。
+
+如果你的PHP不支持mysql、pdo、mbstring这样的扩展库的话，可以没有必要重新编译PHP，直接使用phpize进行添加编译就可以了 
+]]>
+		</screen>
+		<section>
+			<title>
+			如何使用 
+			</title>
+			<screen>
+<![CDATA[
+-- 进入要安装的扩展包的源代码目录 --
+
+(拿APC为例)
+
+# cd /usr/local/src/APC-3.0.19
+
+-- 运行phpzie，生成configure文件 --
+
+# /usr/local/php/bin/phpzie
+]]>
+<note>
+如果这一步发生错误，请看这里。如果没有，请跳过：
+
+# /usr/local/php/bin/phpize
+
+Configuring for:
+PHP Api Version:         20041225
+Zend Module Api No:      20060613
+Zend Extension Api No:   220060519
+Cannot find autoconf. Please check your autoconf installation and the $PHP_AUTOCONF
+environment variable is set correctly and then rerun this script.
+
+通过安装 autoconf 可以解决
+centos下执行 yum install autoconf即可
+</note>
+<![CDATA[
+
+-- 开始编译扩展包 --
+
+# ./configure --enable-apc --enable-apc-mmap --with-php-config=/usr/local/php/bin/php-config
+
+# make
+
+# make install 
+
+
+
+-- 拷贝添加SO文件 --
+
+# cp /usr/local/lib/php/extensions/no-debug-zts-20060613/apc.so /usr/local/php/lib/php/extensions/apc.so
+
+# chmod 755 /usr/local/php/lib/php/extensions/apc.so
+
+
+-- 修改PHP.INI使之启用刚才编译的模块 --
+
+修改 php.ini下
+
+extension_dir = "./"
+
+extension_dir = "/usr/local/php/lib/php/extensions"
+
+配置/etc/php.ini 末尾加入
+
+(此步用于APC 其他扩展按具体情况而定)
+
+extension=apc.so
+
+apc.enabled = 1
+
+apc.cache_by_default = on
+
+apc.shm_segments = 1
+
+apc.shm_size = 128
+
+apc.ttl = 7200
+
+apc.user_ttl = 7200
+
+apc.num_files_hint = 1024
+
+apc.write_lock = On
+
+apc.gc_ttl=3600
+
+apc.ttl=0
+
+apc.mmap_file_mask=/tmp/apc.XXXXXX
+
+
+重启webservice 
+
+
+完成 
+]]>
+			</screen>
+		</section>
+		<section>
+			<title>
+			官方解释
+			</title>
+			<screen>
+<![CDATA[
+用 phpize 编译共享 PECL 扩展库
+
+http://docs.php.net/manual/zh/install.pecl.phpize.php 用 phpize 编译共享 PECL 扩展库
+
+
+有时候不能用 pear 安装命令。这可能是因为在防火墙后面，或者是因为想要安装的扩展库还没有 PEAR 兼容的包，例如 CVS 中尚未发布的扩展库。如果要编译这种扩展库，可以用更底层的编译工具来手工进行编译。
+
+phpize 命令是用来准备 PHP 扩展库的编译环境的。下面例子中，扩展库的源程序位于 extname 目录中：
+
+$ cd extname
+$ phpize
+$ ./configure
+$ make
+# make install
+
+成功的安装将创建 extname.so 并放置于 PHP 的扩展库目录中。需要调整 php.ini，加入 extension=extname.so 这一行之后才能使用此扩展库。
+
+
+将 PECL 扩展库静态编译入 PHP
+
+http://docs.php.net/manual/zh/install.pecl.static.php 将 PECL 扩展库静态编译入 PHP
+
+
+有时可能需要将扩展库静态编译到 PHP 中。这需要将扩展库源程序放入 php-src/ext/ 目录中去并告诉 PHP 编译系统来生成其配置脚本。
+
+$ cd /your/phpsrcdir/ext
+$ pear download extname
+$ gzip -d < extname.tgz | tar -xvf -
+$ mv extname-x.x.x extname
+
+这将产生以下目录：
+
+/your/phpsrcdir/ext/extname
+
+此时强制 PHP 重新生成配置脚本，然后正常编译 PHP：
+
+$ cd /your/phpsrcdir 
+$ rm configure 
+$ ./buildconf --force 
+$ ./configure --help 
+$ ./configure --with-extname --enable-someotherext --with-foobar 
+$ make 
+$ make install
+
+    Note: 要运行“buildconf”脚本，需要 autoconf 2.13 和 automake 1.4+（更新版本的 autoconf 也许能工作，但不被支持）。 
+
+是否用 --enable-extname 或 --with-extname 取决于扩展库。通常不需要外部库文件的扩展库使用 --enable。要确认的话，在 buildconf 之后运行：
+
+$ ./configure --help | grep extname
+
+
+
+]]>
+			</screen>
+		</section>
+		<screen>
+<![CDATA[
+更多阅读链接
+
+http://www.hao32.com/webserver/313.html phpize简介（实例应用） 
+]]>
+		</screen>
+	</section>
+	<section>
+		<title>
+		PHP predefined variables
+		</title>
+		<screen>
+<![CDATA[
+PHP预定义变量 解释
+]]>
+		</screen>
+		<section>
+			<title>
+			$_SERVER
+			</title>
+			<screen>
+<![CDATA[
+$_SERVER['PHP_SELF']：当前正在执行脚本的文件名，与document root相关。
+
+$_SERVER['argv']：传递给该脚本的参数。
+
+$_SERVER['argc']：包含传递给程序的命令行参数的个数（如果运行在命令行模式）。
+
+$_SERVER['GATEWAY_INTERFACE']：服务器使用的CGI规范的版本，例如：“CGI/1.1”。
+
+$_SERVER['SERVER_NAME']：当前运行脚本所在服务器主机的名称。
+
+$_SERVER['SERVER_SOFTWARE']：服务器标识的字串，在响应请求时的头部中给出。
+
+$_SERVER['SERVER_PROTOCOL']：请求页面时通信协议的名称和版本，例如：“HTTP/1.0”。
+
+$_SERVER['REQUEST_METHOD']：访问页面时的请求方法，例如：“GET”、“HEAD”、“POST”、“PUT”。
+
+$_SERVER['QUERY_STRING']：查询(query)的字符串。
+
+$_SERVER['DOCUMENT_ROOT']：当前运行脚本所在的文档根目录，在服务器配置文件中定义。
+
+$_SERVER['HTTP_ACCEPT']：当前请求的Accept: 头部的内容。
+
+$_SERVER['HTTP_ACCEPT_CHARSET']：当前请求的Accept-Charset: 头部的内容，例如：“iso-8859-1,*,utf-8”。
+
+$_SERVER['HTTP_ACCEPT_ENCODING']：当前请求的Accept-Encoding: 头部的内容，例如：“gzip”。
+
+$_SERVER['HTTP_ACCEPT_LANGUAGE']：当前请求的Accept-Language: 头部的内容，例如：“en”。
+
+$_SERVER['HTTP_CONNECTION']：当前请求的Connection: 头部的内容，例如：“Keep-Alive”。
+
+$_SERVER['HTTP_HOST']：当前请求的Host: 头部的内容。
+
+$_SERVER['HTTP_REFERER']：链接到当前页面的前一页面的URL地址。
+
+$_SERVER['HTTP_USER_AGENT']：当前请求的User_Agent: 头部的内容。
+
+$_SERVER['REMOTE_ADDR']：正在浏览当前页面用户的IP地址。
+
+$_SERVER['REMOTE_HOST']：正在浏览当前页面用户的主机名。
+
+$_SERVER['REMOTE_PORT']：用户连接到服务器时所使用的端口。
+
+$_SERVER['SCRIPT_FILENAME']：当前执行脚本的绝对路径名。
+
+$_SERVER['SERVER_ADMIN']：管理员信息。
+
+$_SERVER['SERVER_PORT']：服务器所使用的端口。
+
+$_SERVER['SERVER_SIGNATURE']：包含服务器版本和虚拟主机名的字符串。
+
+$_SERVER['PATH_TRANSLATED']：当前脚本所在文件系统（不是文档根目录）的基本路径。
+
+$_SERVER['SCRIPT_NAME']：包含当前脚本的路径，这在页面需要指向自己时非常有用。
+
+$_SERVER['REQUEST_URI']：访问此页面所需的URI，例如：“/index.html”。
+
+$_SERVER['PHP_AUTH_USER']：当PHP运行在Apache模块方式下，并且正在使用HTTP认证功能，这个变量便是用户输入的用户名。
+
+$_SERVER['PHP_AUTH_PW']：当PHP运行在Apache模块方式下，并且正在使用HTTP认证功能，这个变量便是用户输入的密码。
+
+$_SERVER['AUTH_TYPE']：当PHP运行在Apache模块方式下，并且正在使用HTTP认证功能，这个变量便是认证的类型。 
+]]>
+			</screen>
+		</section>
+	</section>
+  </chapter>
 </book>
 
