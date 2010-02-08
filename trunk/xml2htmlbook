@@ -1,0 +1,10 @@
+#!/bin/bash
+# author: zen wong<w@zenw.org>
+
+#rm -rf $2/*.html
+#docbook2html $1 -o /tmp/docbook2html_tmp -e no-valid
+mkdir /web/doc/$2
+rm -rf /web/doc/$2/*.html
+xsltproc --stringparam html.stylesheet docbook.css  /usr/share/sgml/docbook/xsl-stylesheets-1.69.1-5.1/xhtml/chunk.xsl  $1
+\cp -rf ./*.html /web/doc/$2
+rm -rf ./*.html
