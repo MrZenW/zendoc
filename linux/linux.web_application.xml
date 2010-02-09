@@ -1,0 +1,853 @@
+  <chapter>
+    <title>Web Application</title>
+
+    <para>Web Application</para>
+
+    <section>
+      <title>Apache</title>
+      		<screen>
+<![CDATA[
+最多站点使用的WEBservice
+]]>
+		</screen>
+		<section>
+			<title>
+			安装
+			</title>
+			<screen>
+<![CDATA[
+./configure --prefix=/usr/local/httpd-2.2.14 --with-mysql=/usr/local/mysql/ --enable-module=so --enable-shared=max
+
+make
+
+make install
+
+
+http://neo.zenw.org 中对编译参数的解释:
+
+configure
+
+--with-mpm=worker 进程,线程混合方式效率提高不少
+
+--enable-modules='dir mime' 没有它就找不到index.*文件
+
+--enable-rewrite=shared Rewrite用于表态化
+
+--enable-expires=shared 禁止页面被 cache
+
+--enable-authz_host=shared Order权限
+
+--enable-setenvif=shared
+
+--enable-log_config=shared 日志格式
+
+--enable-speling=shared 允许自动修正拼错的URL
+
+--enable-deflate=shared 压缩传送
+
+--enable-mods-shared='cache file-cache disk-cache mem-cache proxy proxy-ajp proxy-balancer' 代理和缓存
+
+tar zxvf httpd-2.2.4.tar.gz
+cd httpd-2.2.4
+./configure --prefix=/usr/local/httpd-2.2.4 \
+--with-mpm=worker \
+--enable-modules='dir mime' \
+--enable-rewrite=shared \
+--enable-authz_host=shared \
+--enable-alias=shared \
+--enable-setenvif=shared \
+--enable-log_config=shared \
+--enable-speling=shared \
+--enable-filter=shared \
+--enable-deflate=shared \
+--enable-headers=shared \
+--enable-expires=shared \
+--enable-mods-shared='cache file-cache disk-cache mem-cache proxy proxy-ajp proxy-balancer' \
+--disable-include \
+--disable-actions \
+--disable-alias \
+--disable-asis \
+--disable-autoindex \
+--disable-auth_basic \
+--disable-authn_file \
+--disable-authn_default \
+--disable-authz_groupfile \
+--disable-authz_user \
+--disable-authz_default \
+--disable-cgi \
+--disable-cgid \
+--disable-env \
+--disable-negotiation \
+--disable-status \
+--disable-userdir
+
+
+
+make
+make test
+make install
+
+启动
+
+/usr/local/httpd-2.2.4/bin/apachectl start
+
+]]>
+			</screen>
+		</section>
+		<section>
+			<title>
+			安装PHP
+			</title>
+			<screen>
+<![CDATA[
+同以往的安装PHP方式一样，但需要在安装命令中加入--with-apxs2=apache安装目录
+
+如：
+
+./configure ...省略... --with-apxs2=/usr/local/apache/bin/apxs ...省略...
+
+在apache配置文件中加入：
+
+AddType application/x-httpd-php .php .phtml
+AddType application/x-httpd-php-source .phps
+
+]]>
+			</screen>
+		</section>
+		<screen>
+<![CDATA[
+推荐阅读
+
+http://blog.chinaunix.net/u1/37270/showart.php?id=302175 LAMP安装全攻略 - web - 杨军的Linux学习笔记:
+
+
+http://neo.zenw.org/linux/ch25.html#id1346754 第 25 章 Compile install LAMP: 
+]]>
+		</screen>
+    </section>
+    <section>
+	<title>
+	Nginx
+	</title>
+	<section>
+		<title>
+		安装Nginx
+		</title>
+		<screen>
+<![CDATA[
+首先要编译安装PHP和PHP-FPM，具体方法在下面，见：编译安装PHP（建议在安装Nginx前进行）
+
+tar zxvf nginx-0.8.15.tar.gz
+cd nginx-0.8.15/
+./configure --user=www --group=www --prefix=/usr/local/webserver/nginx --with-http_stub_status_module --with-http_ssl_module
+make && make install
+
+
+在/usr/local/nginx/conf/目录中创建nginx.conf文件
+
+#备份原来有的配置文件
+mv /usr/local/nginx/conf/nginx.conf /usr/local/nginx/conf/nginx.conf.BAK
+vi /usr/local/nginx/conf/nginx.conf
+
+内容如下
+
+user  www www;
+
+worker_processes 8;
+
+error_log  /usr/local/nginx/logs/nginx_error.log  crit;
+
+pid        /usr/local/nginx/nginx.pid;
+
+#Specifies the value for maximum file descriptors that can be opened by this process.
+worker_rlimit_nofile 65535;
+
+events
+{
+  use epoll;
+  worker_connections 65535;
+}
+
+http
+{
+  include       mime.types;
+  default_type  application/octet-stream;
+
+  #charset  gb2312;
+      
+  server_names_hash_bucket_size 128;
+  client_header_buffer_size 32k;
+  large_client_header_buffers 4 32k;
+  client_max_body_size 8m;
+      
+  sendfile on;
+  tcp_nopush     on;
+
+  keepalive_timeout 60;
+
+  tcp_nodelay on;
+
+  fastcgi_connect_timeout 300;
+  fastcgi_send_timeout 300;
+  fastcgi_read_timeout 300;
+  fastcgi_buffer_size 64k;
+  fastcgi_buffers 4 64k;
+  fastcgi_busy_buffers_size 128k;
+  fastcgi_temp_file_write_size 128k;
+
+  gzip on;
+  gzip_min_length  1k;
+  gzip_buffers     4 16k;
+  gzip_http_version 1.0;
+  gzip_comp_level 2;
+  gzip_types       text/plain application/x-javascript text/css application/xml;
+  gzip_vary on;
+
+  #limit_zone  crawler  $binary_remote_addr  10m;
+
+  server
+  {
+    listen       80;
+    server_name  wiki.zenw.org;
+    index index.html index.htm index.php;
+    root  /web/htdocs/www;
+
+    #limit_conn   crawler  20;    
+                            
+    location ~ .*\.(php|php5)?$
+    {      
+      #fastcgi_pass  unix:/tmp/php-cgi.sock;
+      fastcgi_pass  127.0.0.1:9000;
+      fastcgi_index index.php;
+      include fcgi.conf;
+    }
+    
+    location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$
+    {
+      expires      30d;
+    }
+
+    location ~ .*\.(js|css)?$
+    {
+      expires      1h;
+    }    
+
+    log_format  access  '$remote_addr - $remote_user [$time_local] "$request" '
+              '$status $body_bytes_sent "$http_referer" '
+              '"$http_user_agent" $http_x_forwarded_for';
+    access_log  /usr/local/nginx/logs/access.log  access;
+      }
+
+  server
+  {
+    listen       80;
+    server_name  www.zenw.org;
+    index index.html index.htm index.php;
+    root  /web/htdocs/www;
+
+    location ~ .*\.(php|php5)?$
+    {      
+      #fastcgi_pass  unix:/tmp/php-cgi.sock;
+      fastcgi_pass  127.0.0.1:9000;
+      fastcgi_index index.php;
+      include fcgi.conf;
+    }
+
+    log_format  wwwlogs  '$remote_addr - $remote_user [$time_local] "$request" '
+               '$status $body_bytes_sent "$http_referer" '
+               '"$http_user_agent" $http_x_forwarded_for';
+    access_log  /usr/local/nginx/logs/wwwlogs.log  wwwlogs;
+  }
+
+  server
+  {
+    listen  80;
+    server_name  blog.zenw.org;
+
+    location / {
+    stub_status on;
+    access_log   off;
+    }
+  }
+}
+
+
+
+在/usr/local/nginx/conf/目录中创建fcgi.conf文件：
+
+内容如下
+
+fastcgi_param  GATEWAY_INTERFACE  CGI/1.1;
+fastcgi_param  SERVER_SOFTWARE    nginx;
+
+fastcgi_param  QUERY_STRING       $query_string;
+fastcgi_param  REQUEST_METHOD     $request_method;
+fastcgi_param  CONTENT_TYPE       $content_type;
+fastcgi_param  CONTENT_LENGTH     $content_length;
+
+fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_name;
+fastcgi_param  SCRIPT_NAME        $fastcgi_script_name;
+fastcgi_param  REQUEST_URI        $request_uri;
+fastcgi_param  DOCUMENT_URI       $document_uri;
+fastcgi_param  DOCUMENT_ROOT      $document_root;
+fastcgi_param  SERVER_PROTOCOL    $server_protocol;
+
+fastcgi_param  REMOTE_ADDR        $remote_addr;
+fastcgi_param  REMOTE_PORT        $remote_port;
+fastcgi_param  SERVER_ADDR        $server_addr;
+fastcgi_param  SERVER_PORT        $server_port;
+fastcgi_param  SERVER_NAME        $server_name;
+
+# PHP only, required if PHP was built with --enable-force-cgi-redirect
+fastcgi_param  REDIRECT_STATUS    200;
+
+启动Nginx
+
+ulimit -SHn 65535
+/usr/local/nginx/sbin/nginx
+
+
+配置开机自动启动Nginx + PHP
+
+vi /etc/rc.local
+
+在末尾增加以下内容：
+
+ulimit -SHn 65535
+/usr/local/webserver/php/sbin/php-fpm start
+/usr/local/webserver/nginx/sbin/nginx
+
+当然，你也可以使用lighttpd的spawn-fcgi来管理php-cgi（FastCGI） 
+]]>
+		</screen>
+	</section>
+	<section>
+		<title>
+		编译安装PHP
+		</title>
+		<screen>
+<![CDATA[
+（建议在安装Nginx前进行）
+
+注：php-fpm可以在 http://php-fpm.org/download 下载
+
+
+tar zxvf php-5.2.10.tar.gz
+
+gzip -cd php-5.2.10-fpm-0.5.11.diff.gz | patch -d php-5.2.10 -p1
+
+cd php-5.2.10/
+
+./configure --prefix=/usr/local/webserver/php \
+--with-config-file-path=/usr/local/webserver/php/etc \
+--with-mysql=/usr/local/webserver/mysql \
+--with-mysqli=/usr/local/webserver/mysql/bin/mysql_config \
+--with-iconv-dir=/usr/local \
+--with-freetype-dir \
+--with-jpeg-dir \
+--with-png-dir \
+--with-zlib \
+--with-libxml-dir=/usr \
+--enable-xml \
+--disable-rpath \
+--enable-discard-path \
+--enable-safe-mode \
+--enable-bcmath \
+--enable-shmop \
+--enable-sysvsem \
+--enable-inline-optimization \
+--with-curl \
+--with-curlwrappers \
+--enable-mbregex \
+--enable-fastcgi \
+--enable-fpm \
+--enable-force-cgi-redirect \
+--enable-mbstring \
+--with-mcrypt \
+--with-gd \
+--enable-gd-native-ttf \
+--with-openssl \
+--with-mhash \
+--enable-pcntl \
+--enable-sockets \
+--with-ldap \
+--with-ldap-sasl \
+--with-xmlrpc \
+--enable-zip \
+--enable-soap \
+--without-pear
+
+make ZEND_EXTRA_LIBS='-liconv'
+make install
+
+cp php.ini-dist /usr/local/webserver/php/etc/php.ini
+cd ../
+
+curl http://pear.php.net/go-pear | /usr/local/webserver/php/bin/php
+
+]]>
+		</screen>
+	</section>
+	<screen>
+<![CDATA[
+推荐阅读
+
+http://blog.s135.com/nginx_php_v5/ Nginx 0.8.x + PHP 5.2.10（FastCGI）搭建胜过Apache十倍的Web服务器（第5版）[原创] - 回忆未来[张宴] - 服务器系统架构与底层研发:
+
+
+http://www.laruence.com/2009/07/28/1030.html Linux上配置Nginx+PHP5(FastCGI) | 风雪之隅:
+
+
+http://zhangjian.blog.51cto.com/199434/154791/ nginx fastcgi服务器的配置和管理 - 0℃/ Network - 51CTO技术博客:
+
+
+http://blog.s135.com/post/361/ 解决Nginx + PHP（FastCGI）遇到的502 Bad Gateway错误[原创] - 回忆未来[张宴] - 服务器系统架构与底层研发:
+
+
+http://blog.s135.com/post/366/ Nginx 0.7.x + PHP 5.2.8（FastCGI）搭建胜过Apache十倍的Web服务器（第4版）[原创] - 回忆未来[张宴] - 服务器系统架构与底层研发: 
+]]>
+	</screen>
+    </section>
+    <section>
+	<title>
+	Lighttpd
+	</title>
+	<screen>
+<![CDATA[
+一个好用的轻巧的webservice
+]]>
+	</screen>
+	<section>
+		<title>
+		编译安装
+		</title>
+		<screen>
+<![CDATA[
+-- 1.下载 --
+
+下载相关软件
+
+
+
+$ sudo apt-get install libpcre3*
+
+
+cd /usr/local/src/
+
+wget http://www.lighttpd.net/download/lighttpd-1.4.15.tar.gz
+
+tar zxvf lighttpd-1.4.15.tar.gz
+
+cd lighttpd-1.4.15
+
+
+-- 2.安装 --
+
+编译安装
+
+
+./configure --prefix=/usr/local/lighttpd-1.4.15 \
+
+--with-bzip2 \
+
+--with-memcache
+
+make
+
+make install
+
+
+-- 3.创建目录与配置文件 --
+
+创建目录与配置文件
+
+ln -s /usr/local/lighttpd-1.4.15/ /usr/local/lighttpd
+
+mkdir -p /www/pages
+
+mkdir /www/logs
+
+mkdir /usr/local/lighttpd/htdocs
+
+mkdir /usr/local/lighttpd/logs
+
+mkdir /usr/local/lighttpd/etc
+
+cp ./doc/lighttpd.conf /usr/local/lighttpd/etc/
+
+cd /usr/local/lighttpd/
+
+
+
+-- 4.修改配置文件 --
+
+配置lighttpd.conf
+
+vi etc/lighttpd.conf
+
+找到 server.modules
+
+删除 mod_fastcgi 前的注释
+
+跟据你的需求修改下面定义
+
+server.document-root = "/usr/local/lighttpd/htdocs/"
+
+server.errorlog = "/usr/local/lighttpd/logs/lighttpd.error.log"
+
+accesslog.filename = "/usr/local/lighttpd/logs/access.log"
+
+注释 $HTTP["url"]
+
+#$HTTP["url"] =~ "\.pdf$" {
+
+# server.range-requests = "disable"
+
+#}
+
+
+-- 5.运行 --
+
+运行lighttpd
+
+/usr/local/lighttpd/sbin/lighttpd -f /usr/local/lighttpd/etc/lighttpd.conf
+
+
+测试
+
+curl http://ip/ 因为/www/pages/下没有HTML页面所以返回:
+
+404 - Not Found
+
+
+
+-- 6.制作启动脚本 --
+
+每次启动lighttpd时我们要指定配置文件的位置，停止lighttpd时要先找到进程号，然后用kill发送停止信号，有点太麻烦了。好在 lighttpd自带了一个脚本程序能辅助完成这些操作，只要稍微改改就能用了，那就是源码目录doc/rc.lighttpd和doc /rc.lighttpd.redhat，后者专用于RedHat Linux。主要的改动之处在于：
+
+...
+if [ -z "$LIGHTTPD_CONF_PATH" ]; then
+LIGHTTPD_CONF_PATH="/usr/local/lighttpd-1.4.9/lighttpd.conf"
+fi
+...
+lighttpd="/usr/local/lighttpd-1.4.9/usr/sbin/lighttpd"
+...
+
+用这个脚本管理lighttpd是不是方便多了。
+
+-- 7.z.en写的简单的管理脚本 --
+
+#!/bin/bash
+# author: z.En Wong<w@zenw.org>
+
+
+PREFIX=/usr/local/lighttpd/
+PROG=$PREFIX/sbin/lighttpd
+OPTIONS=" -f /usr/local/lighttpd/lighttpd.conf"
+restart(){
+        stop
+        start
+
+
+}
+
+start(){
+
+        $PROG$OPTIONS
+}
+stop(){
+        PID=`pidof lighttpd`
+        kill $PID
+
+}
+
+case "$1" in
+        stop)
+                stop
+                ;;
+        start)
+                start
+                ;;
+        restart)
+                restart
+                ;;
+        *)
+                echo "{start|stop|restart}"
+esac
+
+
+]]>
+		</screen>
+	</section>
+	<section>
+		<title>
+		安装PHP(FastCGI)
+		</title>
+		<screen>
+<![CDATA[
+-- 1. 下载PHP --
+
+      cd /usr/local/src/
+      wget http://cn2.php.net/get/php-5.2.3.tar.bz2/from/cn.php.net/mirror
+      tar jxvf php-5.2.3.tar.bz2
+      cd php-5.2.3
+
+-- 2. configure --
+
+      ./configure --prefix=/usr/local/php-5.2.3 \
+      --with-config-file-path=/usr/local/php-5.2.3/etc \
+      --enable-fastcgi \
+      --enable-force-cgi-redirect \
+      --with-curl \
+      --with-gd \
+      --with-ldap \
+      --with-snmp \
+      --enable-zip \
+      --enable-exif \
+      --with-pdo-mysql \
+      --with-pdo-pgsql \
+
+      make
+      make test
+      make install
+      				
+
+      其它有用的模块
+
+      --enable-pcntl
+
+-- 3. 符号连接 --
+
+      ln -s /usr/local/php-5.2.3 /usr/local/php
+      ln -s /usr/local/php/bin/php /usr/local/bin/php
+
+-- 4. php.ini --
+
+      cp php.ini-dist /usr/local/php/etc/php.ini
+
+-- 5. env --
+
+      PHP_FCGI_CHILDREN=384
+
+-- 6. 使用 php -v FastCGI 安装情况 --
+
+      php -v 或 php-cgi -v
+
+      显示(cgi-fcgi)表示正确
+
+      # cd /usr/local/php/
+      # bin/php -v
+      PHP 5.2.2 (cgi-fcgi) (built: May 25 2007 15:50:28)
+      Copyright (c) 1997-2007 The PHP Group
+      Zend Engine v2.2.0, Copyright (c) 1998-2007 Zend Technologies
+      				
+
+      (cgi-fcgi)不能正常工作
+
+      PHP 5.2.2 (cli) (built: May 25 2007 15:50:28)
+      Copyright (c) 1997-2007 The PHP Group
+      Zend Engine v2.2.0, Copyright (c) 1998-2007 Zend Technologies
+      				
+
+      使用 php -m 或php-cgi -m 查看PHP Modules
+
+      # bin/php -m
+      [PHP Modules]
+      cgi-fcgi
+      ctype
+      date
+      dom
+      filter
+      gd
+      hash
+      iconv
+      json
+      ldap
+      libxml
+      mssql
+      pcre
+      PDO
+      pdo_mysql
+      pdo_sqlite
+      posix
+      Reflection
+      session
+      SimpleXML
+      snmp
+      SPL
+      SQLite
+      standard
+      tokenizer
+      xml
+      xmlreader
+      xmlwriter
+      zip
+
+      [Zend Modules]
+      				
+
+- apt-get install -
+
+$ sudo apt-get install php5 php5-cli php5-cgi
+
+
+
+找到 fastcgi.server 去掉注释
+
+bin-path 改为PHP程序安装目录
+
+fastcgi.server             = ( ".php" =>
+                               ( "localhost" =>
+                                 (
+                                  "socket" => "/tmp/php-fastcgi.socket",#这个文件如果不存在，需要touch一下
+                                   "bin-path" => "/usr/local/php/bin/php"
+                                 )
+                               )
+                            )
+
+
+- 下面例子更复杂一些 -
+
+-- 1. /usr/local/lighttpd/etc/lighttpd.conf --
+
+      include /usr/local/lighttpd/etc/php-fastcgi.conf
+
+-- 2. /usr/local/lighttpd/etc/php-fastcgi.conf --
+
+      fastcgi.server = ( ".php" =>
+      	( "localhost" =>
+              ( "socket" => "/tmp/php-fastcgi.socket",
+                 "bin-path" => "/usr/local/php/bin/php",
+                 "min-procs" => 1,
+                 "max-procs" => 5,
+                 "max-load-per-proc" => 4,
+                 "idle-timeout" => 20
+              )
+      	)
+      )
+      				
+
+-- 3. PHP FastCGI环境测试 --
+
+      echo "<?php phpinfo(); ?>" > /www/pages/index.php
+
+      curl http://127.0.0.1/index.php
+
+
+]]>
+		</screen>
+	</section>
+
+	<section>
+		<title>
+		simple-vhost
+		</title>
+		<screen>
+<![CDATA[
+- 功能介绍 -
+
+simple-vhost就是自动将你在浏览器地址栏里输入的URL匹配到一个document-root下与URL相同名字的目录中
+
+这样可以实现不需要配置，就可以简单的创建虚拟主机
+
+
+- 打开simple-vhost功能 -
+
+将server.modules中的mod_simple_vhost去除注释
+
+
+- 配置simple-vhost功能 -
+
+The complete document root is constructed either by
+
+如果完整的配置了simple-vhost目录
+
+server-root + hostname + document-root
+
+or if this path does not exist by
+
+如果没有完整的配置simple-vhost目录
+
+server-root + default-host + document-root
+
+A small example should make this idea clear:
+
+一个小例子
+
+/var/www/
+/var/www/logs/
+/var/www/servers/
+/var/www/servers/example.org/
+/var/www/servers/example.org/lib/
+/var/www/servers/example.org/pages/
+/var/www/servers/mail.example.org/
+/var/www/servers/mail.example.org/lib/
+/var/www/servers/mail.example.org/pages/
+
+将配置文件中以下项目解除注释
+
+simple-vhost.server-root = "/var/www/servers/" 
+simple-vhost.default-host = "example.org" 
+simple-vhost.document-root = "pages" 
+
+
+
+
+- 相关链接 -
+
+http://redmine.lighttpd.net/wiki/1/Docs:ModSimpleVhost 官方标准设置说明 
+
+
+]]>
+		</screen>
+	</section>
+	<section>
+		<title>
+		rewrite
+		</title>
+		<screen>
+<![CDATA[
+- 开启方法 -
+-- 打开lighttpd.conf --
+
+# vim /usr/local/lighttpd/lighttpd.conf
+
+-- 解除配置文件里 server.modules 中的 mod_rewrite 的注释 --
+
+也就是去掉#
+
+...省略...
+
+server.modules              = (
+                               "mod_rewrite",
+
+...省略...
+
+-- 在配置文件里写上自己的重写规则 --
+
+如：
+
+url.rewrite=("^/(.*).html$"=>"/$1.php")
+
+-- 重启lighttpd --
+
+如果你使用了z.En的脚本(见lighttpd中)，可以如下：
+
+# /etc/init.d/lighttpd restart
+
+如果没有使用，那么就需要
+
+# kill `pidof lighttpd`
+# /usr/local/lighttpd/sbin/lighttpd -f /usr/local/lighttpd/lighttpd.conf
+
+
+- 更多链接 -
+
+http://redmine.lighttpd.net/wiki/lighttpd/MigratingFromApache#mod_rewrite 官方说明 
+]]>
+		</screen>
+	</section>
+    </section>
+  </chapter>
+
+

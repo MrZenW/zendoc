@@ -1,0 +1,69 @@
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+
+	<!ENTITY linux.system.xml 	SYSTEM "linux.system.xml">
+		<!ENTITY linux.system.yum.xml 	SYSTEM "linux.system.yum.xml">
+		<!ENTITY linux.system.at_batch_crontab_anacron.xml 	SYSTEM "linux.system.at_batch_crontab_anacron.xml">
+		<!ENTITY linux.system.init.xml 	SYSTEM "linux.system.init.xml">
+		<!ENTITY linux.system.fstab.xml	SYSTEM "linux.system.fstab.xml">
+		<!ENTITY linux.system.fsck.xml	SYSTEM "linux.system.fsck.xml">
+		<!ENTITY linux.system.ntsysv.xml	SYSTEM "linux.system.ntsysv.xml">
+		<!ENTITY linux.system.curl.xml	SYSTEM "linux.system.curl.xml">
+		<!ENTITY linux.system.soft_installaction.xml	SYSTEM "linux.system.soft_installaction.xml">
+		<!ENTITY linux.system.pppoe.xml	SYSTEM "linux.system.pppoe.xml">
+		<!ENTITY linux.system.ps.xml	SYSTEM "linux.system.ps.xml">
+
+	<!ENTITY linux.web_application.xml 	SYSTEM "linux.web_application.xml">
+	<!ENTITY linux.network.xml 	SYSTEM "linux.network.xml">
+]>
+
+<book>
+  <bookinfo>
+    <title>z.En Linux 文档</title>
+
+    <author>
+      <firstname>z.En</firstname>
+      <surname>zen wong</surname>
+      <lineage>王振宇</lineage>
+      <affiliation>
+        <address><email>w@zenw.org</email>
+
+	Web site:<ulink url='http://www.zenw.org'>http://www.zenw.org</ulink></address>
+      </affiliation>
+    </author>
+
+    <copyright>
+      <year>2009</year>
+      <year>2010</year>
+      <holder>王振宇</holder>
+	<holder>http://www.zenw.org</holder>
+    </copyright>
+   <releaseinfo>
+	<para>版本 2009-12-18</para>
+	<para>
+		<screen>
+转载请与作者联系，转载时请务必标明文章原始出处和作者信息及本声明。
+
+文档最近一次更新于 2010-02-05 16:37
+		</screen>
+	</para>
+   </releaseinfo>
+
+    <abstract>
+      <para>这个不用多介绍</para>
+    </abstract>
+  </bookinfo>
+
+  <preface>
+    <title>序言</title>
+
+	<para>
+这个不用多介绍
+
+	</para>
+  </preface>
+
+&linux.system.xml;
+&linux.web_application.xml;
+&linux.network.xml;
+</book>
+

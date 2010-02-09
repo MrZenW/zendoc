@@ -1,0 +1,323 @@
+<section>
+	<title>
+	安装软件
+	</title>
+	<section>
+		<title>
+		Linux如何编译安装源码包软件
+		</title>
+		<screen>
+<![CDATA[
+一、什么是源码包软件；
+
+
+顾名思义，源码包就是源代码的可见的软件包，基于Linux和BSD系统的软件最常见；在国内源可见的软件几乎绝迹；大多开源软件都是国外出品；在国内较为出名的开源软件有fcitx;lumaqq;Lumaqq及scim等；
+
+
+但软件的源代码可见并不等于软件是开源的，我们还要以软件的许可为准；比如有些软件是源码可见的，但他约定用户只能按他约定的内容来修改；比如vbb论坛程序；所以一个软件是否是开源软件，得具备两个条件；一是源代码可见；二是要有宽松的许可证书，比如GPL证书等；
+
+
+在GNU Linux或BSD社区中，开发人员在放出软件的二进制软件包的同时，也会为我们提供源代码软件包；
+
+
+二、源代码有何用？
+
+
+一个软件的如果有源码，是任何人都能看到他是怎么开发而来的，就像一个瓶子，比如瓶子制作的模具是什么；需要什么材料；具体的用途以及瓶子的详细说明书等等。软件的开放源码就是类似，开发者在给我们软件的同时，也会告诉我们软件是怎么开发出来的；只要我们的水平足够的高，所有的代码都在那里，我们就可以修改和定制软件，以适合我们的需要；如果Windows开放源代码，并以GPL发布，一样是有人能造出来N多的Windows发行版；遗憾的是 Windows并不是开源系统；
+
+
+所以软件的源代码的用处无非是以下两点；
+
+
+1、软件根据用户的需要加以定制；
+
+2、二次开发；注：要根据软件的许可证书约定为准，开发者许可二次开发才行；
+
+
+三、怎样安装以源码包打包的软件；
+
+
+1、源码包的打包格式；
+
+源代码一般以file.tar.gz file.tar.bz2或file.src.rpm 打包；file.tar.gz和file.tar.bz2格式的解包命令如下；
+
+[root@localhost beinan]# tar jxvf file.tar.bz2
+
+[root@localhost beinan]# tar zxvf file.tar.gz
+
+
+至于file.src.rpm 的用法，请参见：linux.chinaitlab.com/set/39788.html">《file.src.rpm 使用方法的简介》
+
+
+2、如何编译安装源码包；（大多数）
+
+
+1）解开软件包查看帮助文档；
+
+
+我们解开一个包后，进入解压包，一般都能发现README（或reame)和INSTALL( 或install)；或doc（或DOC)目录；看名字就知道个差不多；
+
+
+比如我们下载一个比较新的fcitx 的软件包，比如是 fcitx-3.2-050827.tar.bz2
+
+我们在解开这个软件包会会发现如下的文件；
+
+
+[root@localhost fcitx]# tar jxvf fcitx-3.2-050827.tar.bz2
+
+[root@localhost fcitx]#cd fcitx
+
+[root@localhost fcitx]# ls
+
+aclocal.m4 config.guess configure debian INSTALL Makefile.in src xpm
+
+AUTHORS config.h.in configure.in depcomp install-sh missing THANKS
+
+autogen.sh config.rpath COPYING doc lib mkinstalldirs TODO
+
+ChangeLog config.sub data fcitx.spec.in Makefile.am README tools
+
+
+所以我们就可以看fcitx的INSTALL 和doc目录的安装文档了；里面都告诉我们如何安装；
+
+
+有时安装文档也会在开发者的主页上有详细的说明，及常见问题的处理等；比如 linux.chinaitlab.com/info/38307.html" target=_blank>LumaQQ
+
+
+2）编译安装软件的条件；
+
+首先我们在Linux系统中至少得把开发工具安装上，比如 gcc ;perl;python;glibc;gtk;make ;automake 等开发工具或基础包；还要安装一些相应的开发包，一般是文件名包括dev的，比如kernel-devel；还有一些开发库，比如以lib开头的；如果您在编译软件时，有时提示缺少什么东西之类的，大多少的是这些开发工具和开发库等；从光盘中找出安装就是了；有时光盘没有提供，请用google搜索相应的软件包，有时可能也会用到源码包编译安装所依赖的包；
+
+
+有时本来系统中已经安装了所依赖的包，但系统提示找不到应该怎么办？这时需要我们设置一下PKG_CONFIG_PATH的环境变量就行了；
+
+
+#export PKG_CONFIG_PATH=/usr/lib/pkgconfig
+
+或
+
+#export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+
+然后我们再来运行编译的./configure ;make ;make install ，尝试着来吧；
+
+
+以java开发的工具开发的程序，要用到 jre或者jdk ；jdk已经包括jre了，所以如果我们只是要求有一个java程序运行的环境，只需要安装jre就行了；安装好jre，配置一下 java的环境变量就可以用了。如果是图形界面的程序，点点鼠标就OK了；
+
+
+用perl 开发的程序，是需要perl环境的，所以必须得把perl的包安装上，python 也同理；
+
+
+3）编译安装软件的方法；
+
+大多以tar.gz 和tar.bz2打包软件，大多是通过 ./configure ;make ;make install 来安装的；有的软件是直接make;make install ；
+
+
+我们可以通过./configure --help 来查看配置软件的功能；大多软件是提供./configure 配置软件的功能的；少数的也没有，如果没有的就不用./configure ;直接make;make install 就行了；
+
+
+./configure 比较重要的一个参数是 --prefix ，用--prefix 参数，我们可以指定软件安装目录；当我们不需要这个软件时，直接删除软件的目录就行了；
+
+
+比如我们可以指定fcitx 安装到 /opt/fcitx 目录中；
+
+
+[root@localhost fcitx]#./configure --prefix=/opt/fcitx
+
+
+如果我们不需要fcitx 时，可以直接删除 /opt/fcitx 目录；
+
+
+所以我们举这个例子中，fcitx如果定制安装到 /opt/fcitx目录中，完整的安装方法应该是：
+
+[root@localhost fcitx]# tar jxvf fcitx-3.2-050827.tar.bz2
+
+[root@localhost fcitx]#cd fcitx
+
+[root@localhost fcitx]# ./configure --prefix=/opt/fcitx
+
+[root@localhost fcitx]# make
+
+[root@localhost fcitx]# make install
+
+
+调用fcitx ，应该是
+
+[beinan@localhost ~]#/opt/fcitx/bin/fcitx
+
+
+如果您想要让fcitx 只要执行fcitx ，就能调用，请配置环境变量，或者在/usr/bin 中做一个fcitx 的链接；
+
+[root@localhost beinan]# ln -s /opt/fcitx/bin/fcitx /usr/bin/fcitx
+
+
+一般的情况下都有说，但大多软件没有提供源码包的卸载方法；我们可以找到软件的安装点删除。主要看你把它安装在哪了。
+
+设置环境变量PATH，请参见：《在Fedora Core 中，有些常用命令怎么没有？解决办法设置PATH》
+
+所以您的PATH可以设置成这样的；
+
+export PATH=".:/bin:/usr/bin:/usr/local/bin:/usr/sbin:/usr/X11R6/bin:/sbin:/opt/fcitx/bin"
+
+
+当然这只是举个例子，fcitx 可以进入桌面自动运行的，请参看 http://www.fcitx.org 官方站上的安装说明；举个例子只是让大家好理解一点；
+
+再举一个例子，比如我想安装mlterm ；并指定安装目录为/opt/mlterm中； http://mlterm.sourceforge.net
+
+#./configure --prefix=/opt/mlterm
+
+#make
+
+#make install
+
+把源码包安装的软件，都指定安装在 /opt目录中，这样不就知道了软件安装在哪里了；也方便卸载；
+
+3.其它类型软件；
+
+1）基于perl 和python 的程序的安装；
+
+一般情况下，用 #perl file.pl安装；比如：VMware 的Linux版本的安装；
+
+[root@localhost vmware-distrib]# perl vmware-install.pl
+
+基于python 开发，也得用 python file.py 来安装
+
+一般软件包都有README和INSTALL 或者 DOC 文档，看文档安装；
+
+2）有些安装程序是脚本型的调用；要用 #sh 文件名
+
+比如NVdia驱动的安装就是这样的；
+
+[beinan@localhost ~]# sh NFORCE-Linux-x86-1.0-0306-pkg1.run
+
+
+当然也能通过 chmod 755 NFORCE-Linux-x86-1.0-0306-pkg1.run ，然后 ./NFORCE-Linux-x86-1.0-0306-pkg1.run 来安装；
+
+也有一些是以file.bin 文件
+
+[beinan@localhost ~]# chmod 755 file.bin
+
+[beinan@localhost ~]# ./file.bin
+
+
+大抵如此。。。。。。。。
+
+后记： 源码包及特殊格式的软件安装就写这么多，写的再多也是写不完。我们主要还是以软件的安装文档为准；安装软件时，如果只是简单的应用，如果有rpm包，尽可能的用rpm包；主要是方便和易于管理；
+
+附录：
+
+安装软件时，最好用各自发行版所提供的系统软件包管理工具，对于Fedora/Redhat 您可以参考如下文章；
+
+0）RPM 基础 《RPM 的介绍和应用》
+
+1）Fedora 系统管理软件包工具 system-config-packages，方便的添加和移除系统安装盘提供的软件包，详情请看 《Fedora 软件包管理器system-config-packages》
+
+2）Redhat 系统管理软件包工具,新一点的系统应该是 redhat-config-packages ，用法和 《Fedora 软件包管理器system-config-packages》 一样；
+
+3）apt + synaptic 软件包在线安装、移除、升级工具； 用法：《用apt+synaptic 在线安装或升级Fedora core 4.0 软件包》 4）yum 软件包在线安装、升级、移除工具；用法：《Fedora/Redhat 在线安装更新软件包，yum 篇》
+
+5）《file.src.rpm 使用方法的简介》
+
+6）《如何编译安装源码包软件》
+
+目前 apt和yum 已经极为成熟了，建议我们安装软件时采用 apt或者yum ；如果安装系统盘提供的软件包，可以用 system-config-packages 或redhat-config-packages ； 
+]]>
+		</screen>
+	</section>
+	<section>
+		<title>
+		和WINDOWS对比
+		</title>
+		<screen>
+<![CDATA[
+注: 本系列文章讲述对程序员而言windows和类unix操作系统(*nix)在使用上的异同，并以*nix为主。涵盖内容包括程序安装、日常操作、编辑器，IDE，管道，GUI vs CLI......，文章宗旨在于引导有经验的windows程序员顺利过渡到*nix下。
+
+windows下安装软件的一般步骤是解压缩，找到setup.exe,点击它，然后next,选安装目录,next,选可选组件,next,.....完成
+
+*nix类似，所不同的是由命令行完成：
+
+  1. tar -xzf xxx-n.n.n.tgz ;  
+  2. cd xxx-n.n.n;  
+  3. ./configure;  
+  4. make;  
+  5. make intall  
+
+tar -xzf xxx-n.n.n.tgz ; cd xxx-n.n.n; ./configure; make; make intall
+
+上面的tar是解压缩，./configure是配置,make是编译，make install是安装。
+
+需要考虑的绝大部分事情是配置时来做的。
+
+配置的时候用命令行参数来指定：
+
+
+./configure --help  
+
+
+可以获得可用的参数说明。
+
+比较通用的一个参数是--prefix，例如
+
+   # 安装到用户的主目录  
+   ./configure --prefix=$HOME  
+   # 安装到/usr目录  
+   ./configure --prefix=/usr  
+
+
+我们知道windows软件一般都把自身配置文件，程序文件，库文件都指定到一个目录中，例如c:\program files\xxx
+
+其下的子目录结构就是软件作者自己随意。
+
+
+*nix软件配置时的prefix参数也是指定安装目录，但是
+
+区别1：安装目录的下级子目录有一套约定的命名，例如$prefix/bin放程序文件，$prefix/etc放配置文件，$prefix/lib放库文件等等。
+
+区别2：大部分的*nix软件会安装到相同的prefix下面，通常是/usr、/usr/local。
+
+此外，configure还常用的参数有--with-xxx,--without-xxx，--enable-xxx,--disable--xxx。前两种决定是否复用其它软件，后两种决定本软件的某特性是否可用。
+
+上面说的是从源码安装得大致过程，二进制安装要简单的多（以gentoo发行版为例）：
+
+emerge -K xxx   
+
+
+对于其它发行版，RedHat使用rpm，Debian使用apt-get，FreeBSD用pkg_add等等。
+
+使用二进制安装意味着失去定制的特性，因为二进制包是预先用某组配置参数从源码编译好了的。
+
+
+
+]]>
+		</screen>
+	</section>
+	<section>
+		<title>
+		编译中遇到的错误
+		</title>
+		<screen>
+<![CDATA[
+- make[2]: 警告:检测到时钟错误。您的创建可能是不完整的。 -
+
+今天看系统的时间好似不对，就改了一下，结果下午来了编译毕设程序就出现了
+
+make[2]: 警告:检测到时钟错误。您的创建可能是不完整的。
+
+汗～
+
+貌似内核时间和源程序的时间冲突，源代码的时间戳比本机的时间更新
+
+可以用touch 命令把源程序的时间戳改一下
+
+find -exec touch {} \;
+
+原因：如果上一次编译时为20071001,你把系统时间改成20070901后再编译就会报这样的错误.
+
+解决：把时间改了或运行下来命令再make
+
+find . -type f -exec touch {} \; 
+
+]]>
+		</screen>
+	</section>
+
+</section>

@@ -1,0 +1,377 @@
+<section>
+	<title>
+	at / batch / crontab / anacron
+	</title>
+	<screen>
+<![CDATA[
+Linux单次例行程序 --
+at :定义只执行一次的例行任务
+batch : 系统有空时才进行背景任务 
+
+Linux轮循例行程序 --
+crontab : 定义循环执行的例行程序
+anacron : 可唤醒停机期间的工作任务 
+]]>
+	</screen>
+	<section>
+		<title>
+		at
+		</title>
+		<screen>
+<![CDATA[
+定义只执行一次的例行任务
+
+
+- 开启 -
+
+要使用单一工作排程时，我们的 Linux 系统上面必须要有负责这个排程的服务，那就是 atd 这个玩意儿。 不过并非所有的 Linux distributions 都默认会把他打开的，所以呢，某些时刻我们必须要手动将他启用才行。 启用的方法很简单，就是这样：
+
+[root@www ~]# /etc/init.d/atd restart
+正在停止 atd:                          [  確定  ]
+正在啟動 atd:                          [  確定  ]
+
+# 再設定一下開機時就啟動這個服務，免得每次重新開機都得再來一次！
+[root@www ~]# chkconfig atd on
+
+
+- --help -
+
+[root@www ~]# at [-mldv] TIME
+[root@www ~]# at -c 工作號碼
+選項與參數：
+-m  ：當 at 的工作完成後，即使沒有輸出訊息，亦以 email 通知使用者該工作已完成。
+-l  ：at -l 相當於 atq，列出目前系統上面的所有該使用者的 at 排程；
+-d  ：at -d 相當於 atrm ，可以取消一個在 at 排程中的工作；
+-v  ：可以使用較明顯的時間格式列出 at 排程中的工作列表；
+-c  ：可以列出後面接的該項工作的實際指令內容。
+
+TIME：時間格式，這裡可以定義出『什麼時候要進行 at 這項工作』的時間，格式有：
+  HH:MM				ex> 04:00
+	在今日的 HH:MM 時刻進行，若該時刻已超過，則明天的 HH:MM 進行此工作。
+  HH:MM YYYY-MM-DD		ex> 04:00 2009-03-17
+	強制規定在某年某月的某一天的特殊時刻進行該工作！
+  HH:MM[am|pm] [Month] [Date]	ex> 04pm March 17
+	也是一樣，強制在某年某月某日的某時刻進行！
+  HH:MM[am|pm] + number [minutes|hours|days|weeks]
+	ex> now + 5 minutes	ex> 04pm + 3 days
+	就是說，在某個時間點『再加幾個時間後』才進行。
+
+
+- 使用 -
+
+範例一：再過五分鐘後，將 /root/.bashrc 寄給 root 自己
+[root@www ~]# at now + 5 minutes  <==記得單位要加 s 喔！
+at> /bin/mail root -s "testing at job" < /root/.bashrc
+at> <EOT>   <==這裡輸入 [ctrl] + d 就會出現 <EOF> 的字樣！代表結束！
+job 4 at 2009-03-14 15:38
+# 上面這行資訊在說明，第 4 個 at 工作將在 2009/03/14 的 15:38 進行！
+# 而執行 at 會進入所謂的 at shell 環境，讓你下達多重指令等待運作！
+
+範例二：將上述的第 4 項工作內容列出來查閱
+[root@www ~]# at -c 4
+#!/bin/sh               <==就是透過 bash shell 的啦！
+# atrun uid=0 gid=0
+# mail     root 0
+umask 22
+....(中間省略許多的環境變數項目)....
+cd /root || {           <==可以看出，會到下達 at 時的工作目錄去執行指令
+         echo 'Execution directory inaccessible' >&2
+         exit 1
+}
+
+/bin/mail root -s "testing at job" < /root/.bashrc
+# 你可以看到指令執行的目錄 (/root)，還有多個環境變數與實際的指令內容啦！
+
+範例三：由於機房預計於 2009/03/18 停電，我想要在 2009/03/17 23:00 關機？
+[root@www ~]# at 23:00 2009-03-17
+at> /bin/sync
+at> /bin/sync
+at> /sbin/shutdown -h now
+at> <EOT>
+job 5 at 2009-03-17 23:00
+# 您瞧瞧！ at 還可以在一個工作內輸入多個指令呢！不錯吧！
+
+
+
+- 管理 -
+
+[root@www ~]# atq
+[root@www ~]# atrm [jobnumber]
+
+範例一：查詢目前主機上面有多少的 at 工作排程？
+[root@www ~]# atq
+5       2009-03-17 23:00 a root
+# 上面說的是：『在 2009/03/17 的 23:00 有一項工作，該項工作指令下達者為 
+# root』而且，該項工作的工作號碼 (jobnumber) 為 5 號喔！
+
+範例二：將上述的第 5 個工作移除！
+[root@www ~]# atrm 5
+[root@www ~]# atq
+# 沒有任何資訊，表示該工作被移除了！
+
+
+]]>
+		</screen>
+	</section>
+	<section>
+		<title>
+		batch
+		</title>
+		<screen>
+<![CDATA[
+系统有空时才进行背景任务 
+
+
+- 使用 -
+
+其实 batch 是利用 at 来进行指令的下达啦！只是加入一些控制参数而已。这个 batch 神奇的地方在于：他会在 CPU 工作负载小于 0.8 的时候，才进行你所下达的工作任务啦！ 那什么是负载 0.8 呢？这个负载的意思是： CPU 在单一时间点所负责的工作数量。不是 CPU 的使用率喔！ 举例来说，如果我有一只程式他需要一直使用 CPU 的运算功能，那么此时 CPU 的使用率可能到达 100% ， 但是 CPU 的工作负载则是趋近于‘ 1 ’，因为 CPU 仅负责一个工作嘛！如果同时执行这样的程式两支呢？ CPU 的使用率还是 100% ，但是工作负载则变成 2 了！了解乎？
+
+所以也就是说，当 CPU 的工作负载越大，代表 CPU 必须要在不同的工作之间进行频繁的工作切换。 这样的 CPU 运作情况我们在第零章有谈过，忘记的话请回去瞧瞧！因为一直切换工作，所以会导致系统忙碌啊！ 系统如果很忙碌，还要额外进行 at ，不太合理！所以才有 batch 指令的产生！
+
+那么 batch 如何下达指令呢？很简单啊！与 at 相同啦！例如下面的范例：
+
+範例一：同樣是機房停電在 2009/3/17 23:00 關機，但若當時系統負載太高，則暫緩執行
+[root@www ~]# batch 23:00 2009-3-17
+at> sync
+at> sync
+at> shutdown -h now
+at> <EOT>
+job 6 at 2009-03-17 23:00
+
+[root@www ~]# atq
+6       2009-03-17 23:00 b root
+[root@www ~]# atrm 6
+
+你会发现其实 batch 也是使用 atq/atrm 来管理的！这样了解乎？
+
+
+]]>
+		</screen>
+	</section>
+	<section>
+		<title>
+		crontab
+		</title>
+		<screen>
+<![CDATA[
+定义循环执行的例行程序
+
+
+
+-  --help -
+
+[root@www ~]# crontab [-u username] [-l|-e|-r]
+選項與參數：
+-u  ：只有 root 才能進行這個任務，亦即幫其他使用者建立/移除 crontab 工作排程；
+-e  ：編輯 crontab 的工作內容
+-l  ：查閱 crontab 的工作內容
+-r  ：移除所有的 crontab 的工作內容，若僅要移除一項，請用 -e 去編輯。
+
+範例一：用 dmtsai 的身份在每天的 12:00 發信給自己
+[dmtsai@www ~]$ crontab -e
+# 此時會進入 vi 的編輯畫面讓您編輯工作！注意到，每項工作都是一行。
+0   12  *  *  * mail dmtsai -s "at 12:00" < /home/dmtsai/.bashrc
+#分 時 日 月 週 |<==============指令串========================>|
+
+
+
+-- 栏位说明 --
+代表意义 	分钟 	小时 	日期 	月份 	周 	指令
+数字范围 	0-59 	0-23 	1-31 	1-12 	0-7 	要执行的指令
+
+-- 字符含义说明 --
+特殊字符 	代表意义
+*(星号) 	代表任何时刻都接受的意思！举例来说，范例一内那个日、月、周都是 * ， 就代表着‘不论何月、何日的礼拜几的 12:00 都执行后续指令’的意思！
+,(逗号) 	代表分隔时段的意思。举例来说，如果要下达的工作是 3:00 与 6:00 时，就会是： 0 3,6 * * * command 时间参数还是有五栏，不过第二栏是 3,6 ，代表 3 与 6 都适用！
+-(减号) 	代表一段时间范围内，举例来说， 8 点到 12 点之间的每小时的 20 分都进行一项工作： 20 8-12 * * * command 仔细看到第二栏变成 8-12 喔！代表 8,9,10,11,12 都适用的意思！
+/n(斜线) 	那个 n 代表数字，亦即是‘每隔 n 单位间隔’的意思，例如每五分钟进行一次，则： */5 * * * * command 很简单吧！用 * 与 /5 来搭配，也可以写成 0-59/5 ，相同意思！
+
+
+- 管理 -
+
+[dmtsai@www ~]$ crontab -l
+59 23 1 5 * mail kiki < /home/dmtsai/lover.txt
+*/5 * * * * /home/dmtsai/test.sh
+30 16 * * 5 mail friend@his.server.name < /home/dmtsai/friend.txt
+
+# 注意，若僅想要移除一項工作而已的話，必須要用 crontab -e 去編輯～
+# 如果想要全部的工作都移除，才使用 crontab -r 喔！
+[dmtsai@www ~]$ crontab -r
+[dmtsai@www ~]$ crontab -l
+no crontab for dmtsai
+
+
+
+- 系统档案设定 -
+
+系統的設定檔： /etc/crontab
+
+這個『 crontab -e 』是針對使用者的 cron 來設計的，如果是『系統的例行性任務』時， 該怎麼辦呢？是否還是需要以 crontab -e 來管理你的例行性工作排程呢？當然不需要，你只要編輯 /etc/crontab 這個檔案就可以啦！有一點需要特別注意喔！那就是 crontab -e 這個 crontab 其實是 /usr/bin/crontab 這個執行檔，但是 /etc/crontab 可是一個『純文字檔』喔！你可以 root 的身份編輯一下這個檔案哩！
+
+基本上， cron 這個服務的最低偵測限制是『分鐘』，所以『 cron 會每分鐘去讀取一次 /etc/crontab 與 /var/spool/cron 裡面的資料內容 』，因此，只要你編輯完 /etc/crontab 這個檔案，並且將他儲存之後，那麼 cron 的設定就自動的會來執行了！
+Tips:
+在 Linux 底下的 crontab 會自動的幫我們每分鐘重新讀取一次 /etc/crontab 的例行工作事項，但是某些原因或者是其他的 Unix 系統中，由於 crontab 是讀到記憶體當中的，所以在你修改完 /etc/crontab 之後，可能並不會馬上執行， 這個時候請重新啟動 crond 這個服務吧！『/etc/init.d/crond restart』 	鳥哥的圖示
+
+廢話少說，我們就來看一下這個 /etc/crontab 的內容吧！
+
+[root@www ~]# cat /etc/crontab
+SHELL=/bin/bash                     <==使用哪種 shell 介面
+PATH=/sbin:/bin:/usr/sbin:/usr/bin  <==執行檔搜尋路徑
+MAILTO=root                         <==若有額外STDOUT，以 email將資料送給誰
+HOME=/                              <==預設此 shell 的家目錄所在
+
+# run-parts
+01  *  *  *  *   root      run-parts /etc/cron.hourly   <==每小時
+02  4  *  *  *   root      run-parts /etc/cron.daily    <==每天
+22  4  *  *  0   root      run-parts /etc/cron.weekly   <==每週日
+42  4  1  *  *   root      run-parts /etc/cron.monthly  <==每個月 1 號
+分 時 日 月 週 執行者身份  指令串
+
+看到這個檔案的內容你大概就瞭解了吧！呵呵，沒錯！這個檔案與將剛剛我們下達 crontab -e 的內容幾乎完全一模一樣！只是有幾個地方不太相同：
+
+    * MAILTO=root：
+
+      這個項目是說，當 /etc/crontab 這個檔案中的例行性工作的指令發生錯誤時，或者是該工作的執行結果有 STDOUT/STDERR 時，會將錯誤訊息或者是螢幕顯示的訊息傳給誰？預設當然是由系統直接寄發一封 mail 給 root 啦！不過， 由於 root 並無法在用戶端中以 POP3 之類的軟體收信，因此，鳥哥通常都將這個 e-mail 改成自己的帳號，好讓我隨時瞭解系統的狀況！例如： MAILTO=dmtsai@my.host.name
+
+    * PATH=....：
+
+      還記得我們在第十一章的 BASH 當中一直提到的執行檔路徑問題吧！ 沒錯啦！這裡就是輸入執行檔的搜尋路徑！使用預設的路徑設定就已經很足夠了！
+
+    * 01 * * * * root run-parts /etc/cron.hourly：
+
+      這個 /etc/crontab 裡面預設定義出四項工作任務，分別是每小時、每天、每週及每個月分別進行一次的工作！ 但是在五個欄位後面接的並不是指令，而是一個新的欄位，那就是『執行後面那串指令的身份』為何！這與使用者的 crontab -e 不相同。由於使用者自己的 crontab 並不需要指定身份，但 /etc/crontab 裡面當然要指定身份啦！以上表的內容來說，系統預設的例行性工作是以 root 的身份來進行的。
+
+      那麼後面那串指令是什麼呢？你可以使用『 which run-parts 』搜尋看看，其實那是一個 bash script 啦！如果你直接進入 /usr/bin/run-parts 去看看， 會發現這支指令會將後面接的『目錄』內的所有檔案捉出來執行！這也就是說『 如果你想讓系統每小時主動幫你執行某個指令，將該指令寫成 script，並將該檔案放置到 /etc/cron.hourly/ 目錄下即可』的意思！
+
+      現在你知道系統是如何進行他預設的一堆例行性工作排程了嗎？如果你下達『 ll /etc/cron.daily 』就可以看到一堆檔案， 那些檔案就是系統提供的 script ，而這堆 scripts 將會在每天的凌晨 4:02 開始運作！這也是為啥如果你是夜貓族， 就會發現奇怪的是，Linux 系統為何早上 4:02 開始會很忙碌的發出一些硬碟跑動的聲音！因為他必須要進行 makewhatis, updatedb, rpm rebuild 等等的任務嘛！ 
+
+由於 CentOS 提供的 run-parts 這個 script 的輔助，因此 /etc/crontab 這個檔案裡面支援兩種下達指令的方式， 一種是直接下達指令，一種則是以目錄來規劃，例如：
+
+    * 指令型態
+      01 * * * * dmtsai mail -s "testing" kiki < /home/dmtsai/test.txt
+      以 dmtsai 這個使用者的身份，在每小時執行一次 mail 指令。
+
+    * 目錄規劃
+      */5 * * * * root run-parts /root/runcron
+      建立一個 /root/runcron 的目錄，將要每隔五分鐘執行的『可執行檔』都寫到該目錄下， 就可以讓系統每五分鐘執行一次該目錄下的所有可執行檔。
+
+好！你現在大概瞭解了這一個咚咚吧！OK！假設你現在要作一個目錄，讓系統可以每 2 分鐘去執行這個目錄下的所有可以執行的檔案，你可以寫下如下的這一行在 /etc/crontab 中：
+
+    */2 * * * * root run-parts /etc/cron.min
+
+當然囉， /etc/cron.min 這個目錄是需要存在的喔！那如果我需要執行的是一個『程式』而已， 不需要用到一個目錄呢？該如何是好？例如在偵測網路流量時，我們希望每五分鐘偵測分析一次， 可以這樣寫：
+
+    */5 * * * * root /bin/mrtg /etc/mrtg/mrtg.cfg
+
+如何！建立例行性命令很簡單吧！如果你是系統管理員而且你的工作又是系統維護方面的例行任務時， 直接修改 /etc/crontab 這個檔案即可喔！又便利，又方便管理呢！
+
+
+- 例子 -
+
+例題：
+假若你的女朋友生日是 5 月 2 日，你想要在 5 月 1 日的 23:59 發一封信給他，這封信的內容已經寫在 /home/dmtsai/lover.txt 內了，該如何進行？
+答：
+直接下達 crontab -e 之後，編輯成為：
+
+    59 23 1 5 * mail kiki < /home/dmtsai/lover.txt
+
+那樣的話，每年 kiki 都會收到你的這封信喔！（當然囉，信的內容就要每年變一變啦！） 
+
+例題：
+假如每五分鐘需要執行 /home/dmtsai/test.sh 一次，又該如何？
+答：
+同樣使用 crontab -e 進入編輯：
+
+    */5 * * * * /home/dmtsai/test.sh
+
+
+例題：
+假如你每星期六都與朋友有約，那麼想要每個星期五下午 4:30 告訴你朋友星期六的約會不要忘記，則：
+答：
+還是使用 crontab -e 啊！
+
+    30 16 * * 5 mail friend@his.server.name < /home/dmtsai/friend.txt
+
+
+
+]]>
+		</screen>
+	</section>
+	<section>
+		<title>
+		anacron
+		</title>
+		<screen>
+<![CDATA[
+可唤醒停机期间的工作任务 
+
+
+
+
+
+- 使用 -
+
+[root@www ~]# anacron [-sfn] [job]..
+[root@www ~]# anacron -u [job]..
+選項與參數：
+-s  ：開始一連續的執行各項工作 (job)，會依據時間記錄檔的資料判斷是否進行；
+-f  ：強制進行，而不去判斷時間記錄檔的時間戳記；
+-n  ：立刻進行未進行的任務，而不延遲 (delay) 等待時間；
+-u  ：僅更新時間記錄檔的時間戳記，不進行任何工作。
+job ：由 /etc/anacrontab 定義的各項工作名稱。
+
+
+- 接下来我们看一下 /etc/anacrontab 的内容好了： -
+
+[root@www ~]# cat /etc/anacrontab
+SHELL=/bin/sh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+MAILTO=root
+
+1       65      cron.daily     run-parts /etc/cron.daily
+7       70      cron.weekly    run-parts /etc/cron.weekly
+30      75      cron.monthly   run-parts /etc/cron.monthly
+天數   延遲時間 工作名稱定義   實際要進行的指令串
+# 天數單位為天；延遲時間單位為分鐘；工作名稱定義可自訂；
+# 指令串則通常與 crontab 的設定相同！
+
+[root@www ~]# more /var/spool/anacron/*
+::::::::::::::
+/var/spool/anacron/cron.daily
+::::::::::::::
+20090315
+::::::::::::::
+/var/spool/anacron/cron.monthly
+::::::::::::::
+20090301
+::::::::::::::
+/var/spool/anacron/cron.weekly
+::::::::::::::
+20090315
+# 上面則是三個工作名稱的時間記錄檔以及記錄的時間戳記
+
+
+
+- 确定 anacron 是否开机时会主动的执行 -
+
+[root@www ~]# chkconfig --list anacron
+anacron      0:off   1:off   2:on    3:on    4:on    5:on    6:off
+# 詳細的 chkconfig 說明我們會在後續章節提到，注意看 3, 5
+# 的項目，都是 on ！那就是有啟動啦！開機時才會執行的意思！
+
+
+
+
+]]>
+		</screen>
+	</section>
+	<screen>
+<![CDATA[
+
+- 参考来源 -
+
+http://linux.vbird.org/linux_basic/0430cron.php 鸟哥的 Linux 私房菜 - 第十六章、例行性工作排程 (crontab) 
+]]>
+	</screen>
+		
+</section>

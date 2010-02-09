@@ -1,0 +1,178 @@
+<section>
+	<title>
+	pppoe
+	</title>
+	<screen>
+<![CDATA[
+我们常用的ADSL拨号其实就是在使用PPPOE
+]]>
+	</screen>
+	<section>
+		<title>
+		配置
+		</title>
+		<screen>
+<![CDATA[
+[root@zenboss ~]# adsl-setup
+
+Welcome to the ADSL client setup. First, I will run some checks on
+
+your system to make sure the PPPoE client is installed properly...
+
+
+LOGIN NAME
+
+Enter your Login Name (default root): SZ1234567
+
+#网络接入商(ISP)给你的用户名
+
+
+INTERFACE
+
+Enter the Ethernet interface connected to the ADSL modem
+
+For Solaris, this is likely to be something like /dev/hme0.
+
+For Linux, it will be ethX, where 'X' is a number.
+
+(default eth0): eth0
+
+#用来adsl拨号的网卡代码
+
+
+Do you want the link to come up on demand, or stay up continuously?
+
+If you want it to come up on demand, enter the idle time in seconds
+
+after which the link should be dropped. If you want the link to
+
+stay up permanently, enter 'no' (two letters, lower-case.)
+
+NOTE: Demand-activated links do not interact well with dynamic IP
+
+addresses. You may have some problems with demand-activated links.
+
+Enter the demand value (default no):
+
+#直接回车
+
+
+DNS
+
+Enter the DNS information here: 202.96.128.86
+
+Enter the secondary DNS server address here: 202.96.134.166
+
+#DNS地址
+
+#会写到/etc/resolv.conf中
+
+
+PASSWORD
+
+Please enter your Password:
+
+Please re-enter your Password:
+
+#输入两次ISP给你ADSL拨号的密码
+
+
+USERCTRL
+
+Please enter 'yes' (two letters, lower-case.) if you want to allow
+
+normal user to start or stop DSL connection (default yes): no
+
+#让使用者无法打开或关闭ADSL拨号(让使用者无法改变ADSL拨号状态)
+
+
+The firewall choices are:
+
+0 - NONE: This script will not set any firewall rules. You are responsible
+
+　　　　　for ensuring the security of your machine. You are STRONGLY
+
+　　　　　recommended to use some kind of firewall rules.
+
+1 - STANDALONE: Appropriate for a basic stand-alone web-surfing workstation
+
+2 - MASQUERADE: Appropriate for a machine acting as an Internet gateway
+
+　　　　　　　　for a LAN
+
+Choose a type of firewall (0-2): 0
+
+#防火墙等级,这里用0,就是不使用防火墙,以后可以使用LINUX的防火墙实现此功能
+
+
+Start this connection at boot time
+
+Do you want to start this connection at boot time?
+
+Please enter no or yes (default no):yes
+
+#是否随系统启动而拨号
+
+
+
+Ethernet Interface: eth0
+
+User name: T1234567
+
+Activate-on-demand: No
+
+Primary DNS: 168.95.1.1
+
+Secondary DNS: 139.175.10.20
+
+Firewalling: NONE
+
+User Control: no
+
+Accept these settings and adjust configuration files (y/n)? y
+
+#写入(保存)配置,没有问题就确认
+
+
+Adjusting /etc/sysconfig/network-scripts/ifcfg-ppp0
+
+Adjusting /etc/resolv.conf
+
+　(But first backing it up to /etc/resolv.conf.bak)
+
+Adjusting /etc/ppp/chap-secrets and /etc/ppp/pap-secrets
+
+　(But first backing it up to /etc/ppp/chap-secrets.bak)
+
+　(But first backing it up to /etc/ppp/pap-secrets.bak)
+
+
+#ifcfg-ppp0,/etc/ppp/pppoe.conf : 以上配置就保存在这个文件里
+
+#resolv.conf : DNS服务器地址文件,似乎上面的配置会改动这个文件,而且帮你备份原有的
+
+#pap-secrets, /etc/ppp/chap-secrets : 我们上面输入的密码就在这个文件里 
+]]>
+		</screen>
+	</section>
+	<section>
+		<title>
+		使用PPPOE拨号 
+		</title>
+		<screen>
+<![CDATA[
+[root@zenboss ~]# adsl-start 
+]]>
+		</screen>
+	</section>
+	<section>
+		<title>
+		关闭PPPOE拨号 
+		</title>
+		<screen>
+<![CDATA[
+[root@zenboss ~]# adsl-stop 
+]]>
+		</screen>
+	</section>
+</section>
