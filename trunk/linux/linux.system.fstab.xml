@@ -1,0 +1,132 @@
+<section>
+	<title>
+	fstab
+	</title>
+	<section>
+		<title>
+		概要
+		</title>
+		<screen>
+<![CDATA[
+/etc/fstab 文件被一些程序用来确定哪些文件系统默认要加载，哪些需要检查，顺序是怎样的。如下新建一个文件系统表：
+
+cat > /etc/fstab << "EOF"
+# Begin /etc/fstab
+
+# 文件系统     挂载点       类型     选项         转储   fsck
+#                                                        order
+
+/dev/[xxx]     /            [fff]  defaults        1     1
+/dev/[yyy]     swap         swap   pri=1           0     0
+proc           /proc        proc   defaults        0     0
+sysfs          /sys         sysfs  defaults        0     0
+devpts         /dev/pts     devpts gid=4,mode=620  0     0
+shm            /dev/shm     tmpfs  defaults        0     0
+# End /etc/fstab
+EOF
+
+将 [xxx], [yyy], [fff] 替换为您系统上相应的值，例如 hda2, hda5, ext2 ，要了解文件里六个字段的详细信息，请运行 man 5 fstab 命令。
+
+如果您使用的是日志文件系统，一行中最后的 1 1 应该替换为 0 0 ，因为这样的分区不需要转储或检查。
+
+将 tmpfs 挂载到 /dev/shm 以便启用 POSIX 共享内存的功能，内核必须编入了配套的支持才能使用这个功能(更多的信息请看下一节)。请注意，目前很少有软件使用了 POSIX 共享内存的功能，因此，/dev/shm 挂载点是可选的。要获得更多信息，请参考内核源码树中的 Documentation/filesystems/tmpfs.txt 文件。
+
+您还可以在 /etc/fstab 文件里添加其它行，下面是 USB 设备的一个例子：
+
+      usbfs        /proc/bus/usb usbfs   devgid=14,devmode=0660 0 0 
+
+只有内核编入了 "Support for Host-side USB" 和 "USB device filesystem"(不能编译为模块)，这个选项才会起作用。如果 "Support for Host-side USB" 已经编译为模块了，那么 usbcore 必须被列在 /etc/sysconfig/modules 文件中。
+
+
+
+]]>
+		</screen>
+	</section>
+	<section>
+		<title>
+		使用
+		</title>
+		<screen>
+<![CDATA[
+　　# fstab文件的作用
+
+　　文件/etc/fstab存放的是系统中的文件系统信息。当正确的设置了该文件，则可以通过"mount /directoryname"命令来加载一个文件系统，每种文件系统都对应一个独立的行，每行中的字段都有空格或tab键分开。同时fsck、 mount、umount的等命令都利用该程序。
+
+　　# fstab文件格式
+
+　　下面是/etc/fatab文件的一个示例行：
+
+　　fs_spec    fs_file fs_type  fs_options fs_dump fs_pass
+
+　　/dev/hda1    /      ext2     defaults     1       1
+
+　　fs_spec - 该字段定义希望加载的文件系统所在的设备或远程文件系统，对于一般的本地块设备情况来说：IDE设备一般描述为/dev/hdaXN，X是IDE设备通道 (a, b, or c)，N代表分区号；SCSI设备一描述为/dev/sdaXN。对于NFS情况，格式一般为<host>:<dir>,例如： `knuth.aeb.nl:/'。对于procfs，使用`proc'来定义。
+
+　　fs_file - 该字段描述希望的文件系统加载的目录点，对于swap设备，该字段为none；对于加载目录名包含空格的情况，用40来表示空格。
+
+　　fs_type - 定义了该设备上的文件系统，一般常见的文件类型为ext2 (Linux设备的常用文件类型)、vfat(Windows系统的fat32格式)、NTFS、iso9600等。
+
+　　fs_options - 指定加载该设备的文件系统是需要使用的特定参数选项，多个参数是由逗号分隔开来。对于大多数系统使用"defaults"就可以满足需要。其他常见的选项包括：
+
+　　选项 含义
+
+　　ro 以只读模式加载该文件系统
+
+　　sync 不对该设备的写操作进行缓冲处理，这可以防止在非正常关机时情况下破坏文件系统，但是却降低了计算机速度
+
+　　user 允许普通用户加载该文件系统
+
+　　quota 强制在该文件系统上进行磁盘定额限制
+
+　　noauto 不再使用mount －a命令（例如系统启动时）加载该文件系统
+
+　　fs_dump - 该选项被"dump"命令使用来检查一个文件系统应该以多快频率进行转储，若不需要转储就设置该字段为0
+
+　　fs_pass - 该字段被fsck命令用来决定在启动时需要被扫描的文件系统的顺序，根文件系统"/"对应该字段的值应该为1，其他文件系统应该为2。若该文件系统无需在启动时扫描则设置该字段为0
+
+　　# 示例文件
+
+　　# /etc/fstab
+
+　　/dev/hda9 swap swap defaults 0 0
+
+　　/dev/hda1 / ext2 defaults 1 1
+
+　　/dev/hda5 /home ext2 defaults 1 1
+
+　　/dev/hda6 /usr ext2 defaults 1 1
+
+　　/dev/hda7 /usr/local ext2 defaults 1 1
+
+　　/dev/hda8 /var ext2 defaults 1 1
+
+　　/dev/hdb /cdrom iso9660 noauto,user 0 0
+
+　　none /proc proc defaults 0 0
+
+　　none /dev/pts devpts gid=5,mode=620 0 0
+
+]]>
+		</screen>
+	</section>
+	<section>
+		<title>
+		fstab 和 mtab 的关系
+		</title>
+		<screen>
+<![CDATA[
+fstab 文件想必大家都很熟悉，记录了计算机上硬盘分区的相关信息，启动 Linux 的时候，检查分区的 fsck 命令，和挂载分区的 mount 命令，都需要 fstab 中的信息，来正确的检查和挂载硬盘。
+
+除了 fstab 文件之外，还有一个 mtab 文件，和 fstab 文件一样在 /etc 文件下，位于 /etc/mtab ，这个文件又是干什么用的呢？
+
+我们可以看一下 mtab 文件的内容 (这是我电脑上的 mtab 文件内容)：
+
+# cat /etc/mtab
+
+/dev/sda4 / reiserfs rw,noatime 0 0 proc /proc proc rw,nosuid,nodev,noexec 0 0 sysfs /sys sysfs rw,nosuid,nodev,noexec 0 0 udev /dev tmpfs rw,nosuid 0 0 devpts /dev/pts devpts rw,nosuid,noexec 0 0 /dev/sda2 /boot ext2 rw,noatime 0 0 shm /dev/shm tmpfs rw,noexec,nosuid,nodev 0 0 /dev/sda1 /mnt/winxp ntfs rw,utf8,umask=0 0 0 usbfs /proc/bus/usb usbfs rw,noexec,nosuid,devmode=0664,devgid=85 0 0 /dev/sdb5 /media/SWAP vfat rw,nosuid,nodev,shortname=lower,uid=1000 0 0 乍看上去，和 fstab 文件的结构和内容基本相同，但是不同的是，mtab 文件记录的是，当前已挂载的分区信息。
+
+每当 mount 挂载分区、umount 卸载分区，都会动态更新 mtab，mtab 总是保持着当前系统中已挂载的分区信息，fdisk、df 这类程序，必须要读取 mtab 文件，才能获得当前系统中的分区挂载情况。 The programs mount and umount maintain a list of currently mounted file systems in the file /etc/mtab. If no arguments are given to mount, this list is printed. When the proc filesystem is mounted (say at /proc), the files /etc/mtab and /proc/mounts have very similar con- tents. The former has somewhat more information, such as the mount options used, but is not necessarily up-to-date (cf. the -n option below). It is possible to replace /etc/mtab by a symbolic link to /proc/mounts, but some information is lost that way, and in particular working with the loop device will be less convenient. 
+]]>
+		</screen>
+	</section>
+</section>
