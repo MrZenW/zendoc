@@ -1543,6 +1543,142 @@ $_SERVER['AUTH_TYPE']：当PHP运行在Apache模块方式下，并且正在使�
 			</screen>
 		</section>
 	</section>
+	<section>
+		<title>
+		SOAP from PHP
+		</title>
+		<para>
+简单对象访问协议（SOAP，全写为Simple Object Access Protocol）是一种标准化的通讯规范，主要用于Web服务（web service）中。SOAP的出现是为了简化网页服务器（Web Server）在从XML数据库中提取数据时，无需花时间去格式化页面，并能够让不同应用程序之间透过HTTP通讯协定，以XML格式互相交换彼此的数据，使其与编程语言、平台和硬件无关。此标准由IBM、Microsoft、UserLand和DevelopMentor在1998年共同提出，并得到 IBM，莲花（Lotus），康柏（Compaq）等公司的支持，于2000年提交给万维网联盟（World Wide Web Consortium；W3C），目前 SOAP 1.1 版是业界共同的标准，属于第二代的XML协定（第一代具主要代表性的技术为XML-RPC以及WDDX）。
+		</para>
+		<para>
+用一个简单的例子来说明 SOAP 使用过程，一个 SOAP 消息可以发送到一个具有 Web Service 功能的 Web 站点，例如，一个含有房价信息的数据库，消息的参数中标明这是一个查询消息，此站点将返回一个 XML 格式的信息，其中包含了查询结果（价格，位置，特点，或者其他信息）。由于数据是用一种标准化的可分析的结构来传递的，所以可以直接被第三方站点所利用。
+		</para>
+		<para>
+   * SOAP封装（envelop），封装定义了一个描述消息中的内容是什么，是谁发送的，谁应当接受并处理它以及如何处理它们的框架；
+		</para>
+		<para>
+   * SOAP编码规则（encoding rules），用于表示应用程序需要使用的数据类型的实例；
+		</para>
+		<para>
+   * SOAP RPC表示（RPC representation），表示远程过程调用和应答的协定；
+		</para>
+		<para>
+   * SOAP绑定（binding），使用底层协议交换信息。
+
+		</para>
+	
+		<section>
+			<title>
+			PHP安装SOAP扩展
+			</title>
+			<screen>
+<![CDATA[
+1.安装php-soap:
+yum install php-soap -y
+
+2.在PHP的编译参数中加入--enable-soap，如： 
+------
+./configure --prefix=/usr/local/php-5.2.12 \
+	--with-config-file-path=/usr/local/php-5.2.12/etc \
+	--enable-fastcgi --enable-force-cgi-redirect --with-curl \
+	--with-gd --with-ldap --with-snmp --enable-zip --enable-exif \
+	--with-pdo-mysql --with-mysql --with-mysqli \
+--enable-soap
+------
+]]>
+			</screen>
+		</section>
+		<section>
+			<title>
+			PHP建立SOAP服务器
+			</title>
+			<section>
+				<title>
+				建立函数文件
+				</title>
+				<screen>
+				<![CDATA[
+这里我们建立一个soap_function.php的文件，用于定义公开给请求的调用的函数
+
+ * file name:soap_function.php 
+------
+
+<?php
+
+function get_str($str){
+        return 'hello '.$str;
+
+}
+
+function add_number($n1,$n2){
+        return $n1+$n2;
+
+}
+
+?>
+
+------
+				]]>
+				</screen>
+			</section>
+			<section>
+				<title>
+				建立服务，注册函数 
+				</title>
+				<screen>
+				<![CDATA[
+有了上步操作，我们还要建立一个SOAP服务并且将定义好的函数注册到服务中
+
+ * file name:soap_service.php 
+------
+
+<?php
+
+include_once('soap_function.php');//导入函数文件
+
+$soap = new SoapServer(null,array('uri'=>'http://zenw.org')); //建立SOAP服务实例
+$soap->addFunction('get_str');
+$soap->addFunction('sum_number');
+//或者可以 $soap->addFunction(array('get_str','sum_number'));
+
+$soap->addFunction(SOAP_FUNCTIONS_ALL); //常量SOAP_FUNCTIONS_ALL的含义在于将当前脚本所能访问的所有function（包括一些系统function）都注册到服务中
+$soap->handle(); //SoapServer对象的handle方法用来处理用户输入并调用相应的函数，最后返回
+
+?>
+
+------
+到这里，一个SoapServer就搭建好了，剩下的就是如何请求她了
+				]]>
+				</screen>
+			</section>
+		</section>
+		<section>
+			<title>
+			PHP建立SOAP客户端请求
+			</title>
+			<screen>
+			<![CDATA[
+ *  file name:soap_client.php 
+------
+
+<?php
+
+$client = new SoapClient(null,array('location'=>"http://192.168.3.229/soap/soap_service.php", //在SOAP服务器建立环节中建立的soap_service.php的URL网络地址
+                                    'uri'=>'http://zenw.org'));
+
+$str = 'zenwong';
+
+echo "get str is :".$client->get_str($str);
+echo "<br />";
+echo 'sun number is:'.$client->sun_number(9,18);
+
+?>
+
+------
+			]]>
+			</screen>
+		</section>
+	</section>
   </chapter>
 </book>
 
